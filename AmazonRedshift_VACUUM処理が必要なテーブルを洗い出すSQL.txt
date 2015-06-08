@@ -1,0 +1,51 @@
+/** 
+ORIGIN
+
+Amazon Redshift Useful SQL: VACUUM処理が必要なテーブルを洗い出す
+http://dev.classmethod.jp/cloud/aws/amazon-redshift-useful-sql-require-tables-to-vacuum/ 
+**/
+
+/** 0.VACUUM処理が行われていないテーブル群 */
+select
+  '0_not_sorted' as status,
+  sum_result.tablename,
+  sum_result.sorted_rows,
+  sum_result.rows,
+  cast(0 as decimal(5,3)) as sort_percentage
+from
+(select
+  trim(name) as tablename,
+  sum(sorted_rows) as sorted_rows,
+  sum(rows) as rows
+from
+  stv_tbl_perm
+group by name
+order by name) sum_result
+where
+  sorted_rows = 0
+UNION ALL
+/** 1.VACUUM処理が行われているテーブル群 */
+select
+  '1_sorted' as status,
+  sum_result.tablename,
+  sum_result.sorted_rows,
+  sum_result.rows,
+  cast(
+    cast(sum_result.sorted_rows as double precision) / cast(sum_result.rows as double precision)
+    as decimal(5,3)
+  ) as sort_percentage
+from
+(select
+  trim(name) as tablename,
+  sum(sorted_rows) as sorted_rows,
+  sum(rows) as rows
+from
+  stv_tbl_perm
+group by name
+order by name) sum_result
+where
+  sorted_rows != 0
+order by
+  status asc,
+  sort_percentage asc,
+  rows desc;

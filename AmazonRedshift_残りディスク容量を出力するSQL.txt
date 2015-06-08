@@ -1,0 +1,13 @@
+/** 
+Amazon Redshift 残りディスク容量を表示するSQL
+**/
+
+SELECT
+      SUM(capacity)/1024 AS capacity_gbytes,
+      SUM(used)/1024 AS used_gbytes,
+      (SUM(capacity) - SUM(used))/1024 AS free_gbytes
+    FROM
+      stv_partitions
+    WHERE
+      part_begin=0;
+
